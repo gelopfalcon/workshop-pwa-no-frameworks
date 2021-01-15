@@ -1,0 +1,26 @@
+{
+    "short_name": "Rick & Morty",
+    "name": "Rick & Morty PWA",
+    "icons": [
+      {
+        "src": "/assets/img/icons/rick-morty-pwa-icon-192x192.png",
+        "type": "image/png",
+        "sizes": "192x192"
+      },
+      {
+        "src": "/assets/img/icons/rick-morty-pwa-icon-512x512.png",
+        "type": "image/png",
+        "sizes": "512x512"
+      },
+      {
+        "src": "/assets/img/icons/maskable_icon.png",
+        "sizes": "196x196",
+        "type": "image/png",
+        "purpose": "maskable"
+      }
+    ],
+    "start_url": "/index.html",
+    "background_color": "#fccf6c",
+    "display": "standalone",
+    "theme_color": "#004d40"
+  }

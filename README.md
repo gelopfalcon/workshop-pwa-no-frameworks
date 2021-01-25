@@ -59,7 +59,7 @@ However, we still have 3 bugs to solve:
 
 But don't worry. Everything will get better when we implement our service worker.
 
-Click [here](https://github.com/kaplan81/rick-morty-pwa-workbox/tree/step-02-app-shell) to navigate the instructions of the next step.
+Click [here](https://github.com/gelopfalcon/workshop-pwa-no-frameworks/tree/step-02-app-shell) to navigate the instructions of the next step.
 
 ## If you didn't make it
 

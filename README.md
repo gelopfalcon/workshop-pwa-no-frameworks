@@ -1,77 +1,163 @@
-# Workshop-pwa-no-frameworks -> Step 2
+# PWA Workshop -> Step 2
 
-## Up and running
+## Register the service worker
+
+Add the following code to your `src/index.html` file, right before the closing `</body>` tag:
+
+```html
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').then(
+        registration => {
+          console.log(`Service Worker registered! Scope: ${registration.scope}`);
+        },
+        error => {
+          console.error(`Service Worker registration failed: ${error}`);
+        }
+      );
+    });
+  }
+</script>
+```
 
 ```bash
-npm i
 npm run build
-npm start
 ```
 
-Open thic URL in Chrome: [`http://localhost:1981/`](http://localhost:1981/)
+If you start the app you should see an error message:
 
-## Our app
+<img src="visuals/non-registered-sw-error.png">
 
-You are probably looking at something like this:
+Of course. We have not created our service worker yet.
 
-<img src="visuals/rick-morty-pwa-home.png">
+## Copy Workbox libraries
 
-We are using [The Rick & Morty API](https://rickandmortyapi.com/) since it is free and funny and it doesn't need any authentication tokens.
+Take a look at your `package.json`. One of the installed `devDependencies` is the `workbox-cli`. As already mentioned workbox is not a library but a set of libraries. This means that you cannot just install all the libraries with an npm command. However with the help of the `workbox-cli` package we can copy those libraries to the `dist` folder during the build process.
 
-On the home page we are collecting 20 random characters from the TV show. By clicking on one of them we navigate to its detail page where we find out if the character is dead or alive. Then we can navigate back to home and keep playing with this simple app.
+In the [Workbox documentation](https://developers.google.com/web/tools/workbox/guides/get-started#importing_workbox) they recommend to import Workbox from the Workbox Content Delivery Network (CDN) but this is not a good practice. Check out [this Jake Archibald's post](https://jakearchibald.com/2018/third-party-css-is-not-safe/) where he talks about third party scripts.
 
-## Go offline
+Instead of that we are going to serve the libraries ourselves. Go to `package.json` and add a sequential (non parallel) execution at the end of the "build" script: `npx workbox copyLibraries dist/scripts`.
 
-Open up the Chrome DevTools and go offline.
+If you don't know the difference between sequential and parallel execution in npm scripts check out this [Stack Overflow question](https://stackoverflow.com/questions/39172536/running-npm-scripts-sequentially/39172660#answer-39172660)
 
-> Tip: use `cmd + shift + p` for Mac or `ctrl + shift + p` for Windows and type "offline".
-
-Reload the page.
-
-You should see this:
-
-<img src="visuals/offline-dino-game.png">
-
-Play with it using the space bar. How much do you score in the offline Dino Game?
-
-Anyway, as you can see we have lost everything. This exactly what we are trying to avoid by making a PWA.
-
-## Audit with Lighthouse
-
-Lighthouse is an excellent tool to improve the quality of web pages.  It has audits for performance, accessibility, progressive web apps, and more. It is pre-installed in all Chrome browsers and you can either run it from the DevTools or from a Node command.
-
-In our case we are ready to run our npm script, generate the corresponding report on HTML and open it up automatically in our browser.
-
-> Do not forget to go online again first!
+Copy the workbox libraries in `dist/scripts` by building again:
 
 ```bash
-git checkout step-00-non-progressive-app
-git checkout -b step-00-non-progressive-app-mine
+npm run build
 ```
 
-<img src="visuals/lighthouse-initial-stats.png">
+Take a look at the outcome and notice the Workbox version since you will need it in your code.
 
-Now click on the Progressive Web App link (top right).
+## Create the App Shell
 
-Notice that there are a lot of things in red:
+An application shell is the minimal HTML, CSS, and JavaScript powering a user interface. You can think of it as the bundle of code you'd publish to an app store if you were building a native app.
 
-* Current page does not respond with a 200 when offline.
-* start_url does not respond with a 200 when offline
-* Does not register a service worker that controls page and start_url
-* Web app manifest does not meet the installability requirements
-* Does not redirect HTTP traffic to HTTPS
-* Is not configured for a custom splash screen
-* Does not set an address-bar theme color
-* Does not provide a valid apple-touch-icon
+Workbox handles 2 types of caching:
 
-The HTTPS red flag is totally expected. For security reasons service workers only run over the HTTPS protocol but if the hostname corresponds our `localhost` the HTTP protocol is also considered secure and we can run our service worker over it. This is intended to make development easier.
+* Precaching: is performed during the service worker installation and it takes a precache manifest.
+* Runtime caching: is performed on fetch events.
 
-We assume that our app will run on a secure protocol in production so we can ignore this supposed failure. However we definitely need to work on the rest of them and make them into green.
+Be careful not to mistake precache manifest with web app manifest. The precache manifest only specifies the files that are going to be precached by our service worker. This is the App Shell.
 
-Are you ready for the challenge?
+The first thing we need is a file for our custom service worker. Create it in `src/sw-custom.js`.
 
-From this point on you are going to start providing your own code.
+Here you have a template for that file. Replace the parts that are indicated in the comments:
 
-**Do not checkout the next branch**. Keep yourself where you are in your local machine.
+```javascript
+// Replace the x's in the string with the correct Workbox copied version!
+importScripts('/scripts/workbox-vx.x.x/workbox-sw.js');
 
-Click [here](https://github.com/kaplan81/rick-morty-pwa-workbox/tree/step-01-web-app-manifest) to navigate to the instructions of the next branch.
+if (workbox) {
+  console.log(`Yay! Workbox is loaded 🎉`);
+
+  workbox.setConfig({
+    // Replace the x's in the string with the correct Workbox copied version!
+    modulePathPrefix: '/scripts/workbox-vx.x.x/'
+  });
+
+  workbox.precaching.precacheAndRoute([]);
+} else {
+  console.log(`Boo! Workbox didn't load 😬`);
+}
+```
+
+`importScripts()` method belongs to any worker global scope and allowes us to import one or more scripts into the current worker's scope. Fill in the corresponding Workbox version so that this method doesn't fail.
+
+`workbox.precaching.precacheAndRoute([])` is just a placeholder. The precache manifest will be generated inside it in our final `dist/sw.js`. 
+
+Let's generate our service worker.
+
+```bash
+npx workbox wizard --injectManifest
+```
+
+The Workbox wizard asks a series of questions. You can find out most of the answers by looking at what should be the resulting `./workbox-config.js`:
+
+```javascript
+module.exports = {
+  globDirectory: 'dist/',
+  globPatterns: ['**/*.{png,jpeg,html,css,json,ico,js}'],
+  swDest: 'dist/sw.js',
+  swSrc: 'src/sw-custom.js',
+  // Replace the x's in the string with the correct Workbox copied version!
+  globIgnores: ['scripts/workbox-vx.x.x/**/*']
+};
+```
+
+* The root of your web app is the `globDirectory`.
+* By default when they ask you about the file types all of them are selected. Just leave it like that.
+* The existing service worker file to be used with injectManifest is the `swSrc` since our custom file includes the placeholder array for that.
+* The rest of the answers are fine just as they are.
+
+Once you are done the `./workbox-config.js` should be created. After that the `globIgnores` property should be added manually. We specify that property because we just don't need to cache the Workbox libraries.
+
+And now that we have our configs we can mofify the precache manifest placeholder in `sw-custom.js`.
+
+```javascript
+workbox.precaching.precacheAndRoute([], {
+    // Ignore all URL parameters.
+    ignoreURLParametersMatching: [/.*/]
+  });
+```
+
+The `ignoreURLParametersMatching` property is used to avoid problems with our URL query parameters.
+
+But you need to do one more thing. Go to `package.json` and add another sequential execution at the end of the "build" script: `npx workbox injectManifest`.
+
+Now build it.
+
+```bash
+npm run build
+```
+
+Open the final service worker file and see what a precache manifest really looks like. The `workbox-cli` automatically adds revision hashes to the files in the manifest entries. This way Workbox intelligently tracks files that have been modified or are outdated, and automatically keep caches up to date with the latest file versions. It also removes cached files that are no longer in the manifest, keeping the amount of data stored on a user's device to a minimum.
+
+But that is not the only benefit of using Workbox. Keep in mind that if we had written this on Vanilla JS we would have need to write the whole boilerplate from the 3 service worker lifecycle events: `load`, `install` and `activate`. Workbox wraps this complexity for us and solves everything in 1 (`precacheAndRoute`) shot instead of 3.
+
+## Verify changes
+
+Probably your console is looking much better now:
+
+<img src="visuals/registered-sw-log.png">
+
+On the other hand, let's run Lighthouse again:
+
+```bash
+npm run lighthouse
+```
+
+Another beautiful sight:
+
+<img src="visuals/lighthouse-final-stats.png">
+
+This is what a modern web app should look like!
+
+Click [here](https://github.com/kaplan81/rick-morty-pwa-workbox/tree/step-03-offline-experience) to navigate the instructions of the next step. 
+
+## If you didn't make it
+
+```bash
+git checkout step-02-app-shell
+git checkout -b step-02-app-shell-mine
+```

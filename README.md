@@ -153,7 +153,7 @@ Another beautiful sight:
 
 This is what a modern web app should look like!
 
-Click [here](https://github.com/kaplan81/rick-morty-pwa-workbox/tree/step-03-offline-experience) to navigate the instructions of the next step. 
+Click [here](https://github.com/gelopfalcon/workshop-pwa-no-frameworks/tree/step-03-offline-experience) to navigate the instructions of the next step. 
 
 ## If you didn't make it
 

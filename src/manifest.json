@@ -1,6 +1,6 @@
 {
-  "short_name": "Rick & Morty",
-  "name": "Rick & Morty PWA",
+  "short_name": "Workshop PWA without frameworks",
+  "name": "Workshop PWA without frameworks",
   "icons": [
     {
       "src": "/assets/img/icons/rick-morty-pwa-icon-192x192.png",
@@ -11,6 +11,12 @@
       "src": "/assets/img/icons/rick-morty-pwa-icon-512x512.png",
       "type": "image/png",
       "sizes": "512x512"
+    },
+    {
+      "src": "/assets/img/icons/maskable_icon.png",
+      "sizes": "196x196",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "start_url": "/index.html",

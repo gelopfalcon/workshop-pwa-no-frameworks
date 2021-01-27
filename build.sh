@@ -15,3 +15,7 @@ cp node_modules/rickmortyapi/src/index.js dist/scripts
 sed '1d' dist/scripts/index.js > dist/scripts/rickmortyapi.js
 # --> and remove the former index.js
 rm dist/scripts/index.js
+
+npx workbox copyLibraries dist/scripts
+
+npx workbox injectManifest 
